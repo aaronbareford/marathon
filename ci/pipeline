@@ -4,16 +4,16 @@ import ammonite.ops._
 import ammonite.ops.ImplicitWd._
 import scala.util.control.NonFatal
 
+import $file.fileUtil
 import $file.phabricatorClient
 import $file.provision
-import $file.fileUtil
-
+import $file.utils
 
 /**
  * Compile Marathon and run unit and integration tests followed by scapegoat.
  */
 @main
-def compileAndTest(): Unit = {
+def compileAndTest(): Unit = utils.stage("Compile and Test") {
   %('sbt, 'clean, 'test, "integration:test", 'scapegoat)
 }
 
@@ -31,7 +31,7 @@ def createPackageSha1s(): Unit = {
  * associated sha1
  */
 @main
-def createPackages(): Unit = {
+def createPackages(): Unit = utils.stage("Package") {
   %('sbt, "universal:packageZipTarball", "universal:packageXzTarball")
   createPackageSha1s()
 }
@@ -63,8 +63,10 @@ def phabricator(): Unit = {
  */
 @main
 def jenkins(): Unit = {
-  provision.killStaleTestProcesses()
-  provision.installMesos()
+  utils.stage("Provision") {
+    provision.killStaleTestProcesses()
+    provision.installMesos()
+  }
 
   compileAndTest()
 
